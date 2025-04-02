@@ -48,7 +48,8 @@ jobs:
         script: |
           # Stop and delete old PM2 process
           cd /var/www/
-          chown -R ubuntu:root /var/www/
+          sudo chown -R $USER:$USER /var/www
+          sudo chmod -R 755 /var/www
           sudo pm2 delete server || true
           sudo npm install
           
