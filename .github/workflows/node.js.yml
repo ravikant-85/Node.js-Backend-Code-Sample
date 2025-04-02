@@ -39,4 +39,7 @@ jobs:
           ls -la /home/ubuntu
           cd /home/ubuntu
           sudo npm install
+          sudo pm2 delete server
+          sudo pm2 start server.js
+          sudo pm2 list
           
