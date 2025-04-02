@@ -13,17 +13,17 @@ jobs:
     - name: 🛎️ Checkout Code
       uses: actions/checkout@v3
 
-    - name: 📦 Build JAR File
-      run: |
-        mvn clean package -DskipTests
-        mkdir -p target/deploy
-        cp target/*.jar target/deploy/app.jar
+    # - name: 📦 Build JAR File
+    #   run: |
+    #     mvn clean package -DskipTests
+    #     mkdir -p target/deploy
+    #     cp target/*.jar target/deploy/app.jar
 
-    - name: ⬆️ Upload JAR Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: java-build
-        path: target/deploy/app.jar
+    # - name: ⬆️ Upload JAR Artifact
+    #   uses: actions/upload-artifact@v3
+    #   with:
+    #     name: java-build
+    #     path: target/deploy/app.jar
 
   deploy:
     needs: build
