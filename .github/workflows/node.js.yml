@@ -1,48 +1,68 @@
-name: Node CI
+name: Deploy Java JAR to EC2
 
 on:
   push:
     branches:
-      - 'master'
+      - master  # Ya prod/staging branch jo bhi use kar rahe ho
 
 jobs:
-  deploy:
-    name: Build & Deploy to EC2
+  build:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
 
     steps:
-      - name: Checkout master branch
-        uses: actions/checkout@v3
-        with:
-          ref: master
+    - name: 🛎️ Checkout Code
+      uses: actions/checkout@v3
 
-      - name: Install rsync and sshpass
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y rsync sshpass
+    - name: 📦 Build JAR File
+      run: |
+        mvn clean package -DskipTests
+        mkdir -p target/deploy
+        cp target/*.jar target/deploy/app.jar
 
-      - name: Sync files to EC2 using rsync
-        run: |
-          sshpass -p "${{ secrets.EC2_KEY }}" rsync -avz \
-            -e "ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }}" \
-            --exclude '.git/' --exclude 'node_modules/' --exclude '.github/' \
-            ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/
-        env:
-          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+    - name: ⬆️ Upload JAR Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: java-build
+        path: target/deploy/app.jar
 
-      - name: Run remote SSH commands on EC2
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            export NVM_DIR=~/.nvm
-            source ~/.nvm/nvm.sh
-            cd /var/www/
-            npm install
-            pm2 delete server || true
-            pm2 start server.js
-            pm2 save
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 🚀 Deploy JAR to EC2
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        source: .
+        target: "/var/www"
+
+    - name: 🔥 Start Java Application with PM2
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_EC2_KEY }}
+        script: |
+          # Stop and delete old PM2 process
+          cd /var/www/
+          chown -R ubuntu:root /var/www/
+          sudo pm2 delete server || true
+          sudo npm install
+          
+          # Start new PM2 process with Java
+          sudo pm2 start server.js --name "server"
+          
+          # Save PM2 process
+          sudo pm2 save
+
+    - name: ✅ Verify PM2 Process
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_EC2_KEY }}
+        script: |
+          sudo pm2 list
