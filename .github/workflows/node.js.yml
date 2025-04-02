@@ -18,20 +18,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 🚀 Deploy nodejs to EC2
-      uses: appleboy/scp-action@master
+    - name: 🚀 Deploy Node.js to EC2 (Ignore .git & node_modules)
+      uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_KEY }}
-        source: .
-        target: "/var/www"
-        overwrite: true
-        rm: true
-        strip_components: 0
-        tar_exec: "tar --exclude='.git' --exclude='.github' --exclude='node_modules' -czf - ."
+        script: |
+          rsync -avz --exclude '.git' --exclude 'node_modules' ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/
 
-    - name: 🔥 Start node Application with PM2
+    - name: 🔥 Start Node.js Application with PM2
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.EC2_HOST }}
