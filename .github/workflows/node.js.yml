@@ -3,7 +3,7 @@ name: Deploy Java JAR to EC2
 on:
   push:
     branches:
-      - master  # Ya prod/staging branch jo bhi use kar rahe ho
+      - master  
 
 jobs:
   build:
@@ -25,7 +25,9 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_KEY }}
         script: |
-          rsync -avz --exclude '.git' --exclude 'node_modules' ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/
+          mkdir -p ~/.ssh
+          echo "StrictHostKeyChecking no" >> ~/.ssh/config
+          rsync -avz --exclude '.git' --exclude 'node_modules' -e "ssh -o StrictHostKeyChecking=no" ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/
 
     - name: 🔥 Start Node.js Application with PM2
       uses: appleboy/ssh-action@master
@@ -34,17 +36,12 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_KEY }}
         script: |
-          # Stop and delete old PM2 process
           cd /var/www/
           sudo chown -R $USER:$USER /var/www
           sudo chmod -R 755 /var/www
           sudo pm2 delete server || true
           sudo npm install
-          
-          # Start new PM2 process with node
           sudo pm2 start server.js --name "server"
-          
-          # Save PM2 process
           sudo pm2 save
 
     - name: ✅ Verify PM2 Process
