@@ -37,3 +37,6 @@ jobs:
         key: ${{ secrets.EC2_KEY }}
         script: |
           ls -la /home/ubuntu
+          cd /home/ubuntu
+          sudo npm install
+          
