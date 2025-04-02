@@ -22,13 +22,12 @@ jobs:
         source: .
         target: "/home/ubuntu"
         debug: true
-        strip_components: 1  # Yeh folder ke andar ki files copy karega
-        overwrite: true
-        rm: true
-        tar_tmp_path: "/tmp"
-        proxy_timeout: "60s"
-        command_timeout: "60s"
-        exclude: ".git,.github,node_modules"
+        # strip_components: 1  # Yeh folder ke andar ki files copy karega
+        # overwrite: true
+        # rm: true
+        # tar_tmp_path: "/tmp"
+        # proxy_timeout: "60s"
+        # command_timeout: "60s"
 
     - name: ✅ Verify Deployment
       uses: appleboy/ssh-action@master
