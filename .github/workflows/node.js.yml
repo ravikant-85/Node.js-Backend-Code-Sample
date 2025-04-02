@@ -27,7 +27,7 @@ jobs:
         script: |
           mkdir -p ~/.ssh
           echo "StrictHostKeyChecking no" >> ~/.ssh/config
-          rsync -avz --exclude '.git' --exclude 'node_modules' -e "ssh -o StrictHostKeyChecking=no" ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/
+          sudo rsync -avz --exclude '.git' --exclude 'node_modules' -e "ssh -o StrictHostKeyChecking=no" ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/
 
     - name: 🔥 Start Node.js Application with PM2
       uses: appleboy/ssh-action@master
