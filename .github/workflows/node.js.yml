@@ -1,32 +1,48 @@
 name: Node CI
-on:
-    push:
-        branches:
-            - 'master'
-jobs:
-    main-build:
-        runs-on: ubuntu-latest
-        if: github.ref == 'refs/heads/master'
-        steps:
-            - uses: actions/checkout@v3
-              with:
-                  ref: master
-            - uses: up9cloud/action-rsync@master
-              env:
-                HOST: ${{ secrets.EC2_HOST}}
-                TARGET: /var/www/
-                PASSWORD: ${{ secrets.SSH_PASSWORD}}
-                SOURCE: .
-                USER: ${{ secrets.EC2_USER }}
-            - name: executing remote ssh commands using password
-              uses: appleboy/ssh-action@v1
-              with:
-                host: ${{ secrets.EC2_HOST}}
-                username: ${{ secrets.EC2_USER }}
-                password: ${{ secrets.SSH_PASSWORD }}
-                port: ${{ secrets.PORT }}
-                script: |
-                      export NVM_DIR=~/.nvm
-                      source ~/.nvm/nvm.sh
-                      cd /var/www/ ; npm install ; pm2 delete server ; pm2 start server.js ; pm2 save
 
+on:
+  push:
+    branches:
+      - 'master'
+
+jobs:
+  deploy:
+    name: Build & Deploy to EC2
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Checkout master branch
+        uses: actions/checkout@v3
+        with:
+          ref: master
+
+      - name: Install rsync and sshpass
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rsync sshpass
+
+      - name: Sync files to EC2 using rsync
+        run: |
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" rsync -avz \
+            -e "ssh -o StrictHostKeyChecking=no -p ${{ secrets.PORT }}" \
+            --exclude '.git/' --exclude 'node_modules/' --exclude '.github/' \
+            ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+
+      - name: Run remote SSH commands on EC2
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.PORT }}
+          script: |
+            export NVM_DIR=~/.nvm
+            source ~/.nvm/nvm.sh
+            cd /var/www/
+            npm install
+            pm2 delete server || true
+            pm2 start server.js
+            pm2 save
