@@ -1,0 +1,33 @@
+name: Deploy Node.js with PM2
+
+on:
+  push:
+    branches:
+      - master  # Change this to your deployment branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+     strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+        steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Deploy to Server
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd /var/www || exit 1
+          if [ ! -d "your_project" ]; then
+            git clone https://github.com/ravikant-85/your-repo.git your_project
+          fi
+          cd your_project
+          git pull origin main --no-edit
+          npm install --force
+          pm2 restart server.js || pm2 start server.js --name node-app
+          pm2 save
