@@ -21,9 +21,9 @@ jobs:
             - name: executing remote ssh commands using password
               uses: appleboy/ssh-action@v1
               with:
-                host: ${{ secrets.HOST }}
-                username: linuxserver.io
-                password: ${{ secrets.PASSWORD }}
+                host: ${{ secrets.EC2_HOST}}
+                username: ${{ secrets.EC2_USER }}
+                password: ${{ secrets.SSH_PASSWORD }}
                 port: ${{ secrets.PORT }}
                 script: |
                       export NVM_DIR=~/.nvm
