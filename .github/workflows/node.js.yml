@@ -20,7 +20,8 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_KEY }}
         source: .
-        target: "/var/www"
+        target: "/home/ubuntu"
+        debug: true
         strip_components: 1  # Yeh folder ke andar ki files copy karega
         overwrite: true
         rm: true
@@ -36,4 +37,4 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_KEY }}
         script: |
-          ls -lah /var/www
+          ls -la /home/ubuntu
